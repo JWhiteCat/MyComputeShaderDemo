@@ -58,6 +58,7 @@ public class ThreeTextures : MonoBehaviour
 
         {
             rt = new RenderTexture(size, size, 0, RenderTextureFormat.ARGB32); //RenderTextureFormat.ARGBFloat
+            rt.filterMode = FilterMode.Point;
             rt.enableRandomWrite = true;
             rt.Create(); //似乎可以不加这一行
 
