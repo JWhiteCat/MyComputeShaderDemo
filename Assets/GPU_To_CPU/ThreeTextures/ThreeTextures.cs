@@ -24,38 +24,51 @@ public class ThreeTextures : MonoBehaviour
 
     void Start()
     {
-        stTexture = new Texture2D(size, size, TextureFormat.ARGB32, false); //TextureFormat.RGBAFloat
-        stTexture.filterMode = FilterMode.Point;
+        Color[] colors = new Color[size * size];
 
-        appendTexture = new Texture2D(size, size, TextureFormat.ARGB32, false);
-        appendTexture.filterMode = FilterMode.Point;
+        {
+            stTexture = new Texture2D(size, size, TextureFormat.ARGB32, false); //TextureFormat.RGBAFloat
+            stTexture.filterMode = FilterMode.Point;
 
-        stBuffer = new ComputeBuffer(size * size, sizeof(float) * 4, ComputeBufferType.Default);
-        appendBuffer = new ComputeBuffer(size * size, sizeof(float) * 4, ComputeBufferType.Append);
-        rt = new RenderTexture(size, size, 0, RenderTextureFormat.ARGB32); //RenderTextureFormat.ARGBFloat
-        rt.enableRandomWrite = true;
-        rt.Create(); //似乎可以不加这一行
+            stBuffer = new ComputeBuffer(size * size, sizeof(float) * 4, ComputeBufferType.Default);
 
-        mat_st.SetTexture("_MainTex", stTexture);
-        mat_append.SetTexture("_MainTex", appendTexture);
-        mat_rt.SetTexture("_MainTex", rt);
+            mat_st.SetTexture("_MainTex", stTexture);
 
-        shader.SetBuffer(kernel, "StBuffer", stBuffer);
-        appendBuffer.SetCounterValue(0);
-        shader.SetBuffer(kernel, "AppendBuffer", appendBuffer);
-        shader.SetTexture(kernel, "RT", rt);
+            shader.SetBuffer(kernel, "StBuffer", stBuffer);
+
+            #region test
+
+            Vector4[] stData = new Vector4[size * size];
+            stBuffer.GetData(stData);
+
+            #endregion
+        }
+
+        {
+            appendTexture = new Texture2D(size, size, TextureFormat.ARGB32, false);
+            appendTexture.filterMode = FilterMode.Point;
+
+            appendBuffer = new ComputeBuffer(size * size, sizeof(float) * 4, ComputeBufferType.Append);
+
+            mat_append.SetTexture("_MainTex", appendTexture);
+
+            appendBuffer.SetCounterValue(0);
+            shader.SetBuffer(kernel, "AppendBuffer", appendBuffer);
+        }
+
+        {
+            rt = new RenderTexture(size, size, 0, RenderTextureFormat.ARGB32); //RenderTextureFormat.ARGBFloat
+            rt.enableRandomWrite = true;
+            rt.Create(); //似乎可以不加这一行
+
+            mat_rt.SetTexture("_MainTex", rt);
+
+            shader.SetTexture(kernel, "RT", rt);
+        }
 
         kernel = shader.FindKernel("CSMain");
         shader.Dispatch(kernel, size / 8, size / 8, 1);
 
-        #region test
-
-        Vector4[] stData = new Vector4[size * size];
-        stBuffer.GetData(stData);
-
-        #endregion
-
-        Color[] colors = new Color[size * size];
         stBuffer.GetData(colors);
         stTexture.SetPixels(colors);
         stTexture.Apply();
