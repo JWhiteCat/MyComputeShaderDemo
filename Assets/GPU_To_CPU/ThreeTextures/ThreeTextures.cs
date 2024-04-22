@@ -10,12 +10,14 @@ public class ThreeTextures : MonoBehaviour
     public ComputeShader shader;
     public Material mat_st;
     public Material mat_append;
+    public Material mat_rt;
 
     private int size = 128;
     private int kernel;
 
     private ComputeBuffer stBuffer;
     private ComputeBuffer appendBuffer;
+    private RenderTexture rt;
 
     private Texture2D stTexture;
     private Texture2D appendTexture;
@@ -30,13 +32,18 @@ public class ThreeTextures : MonoBehaviour
 
         stBuffer = new ComputeBuffer(size * size, sizeof(float) * 4, ComputeBufferType.Default);
         appendBuffer = new ComputeBuffer(size * size, sizeof(float) * 4, ComputeBufferType.Append);
+        rt = new RenderTexture(size, size, 0, RenderTextureFormat.ARGB32); //RenderTextureFormat.ARGBFloat
+        rt.enableRandomWrite = true;
+        rt.Create(); //似乎可以不加这一行
 
         mat_st.SetTexture("_MainTex", stTexture);
         mat_append.SetTexture("_MainTex", appendTexture);
+        mat_rt.SetTexture("_MainTex", rt);
 
         shader.SetBuffer(kernel, "StBuffer", stBuffer);
         appendBuffer.SetCounterValue(0);
         shader.SetBuffer(kernel, "AppendBuffer", appendBuffer);
+        shader.SetTexture(kernel, "RT", rt);
 
         kernel = shader.FindKernel("CSMain");
         shader.Dispatch(kernel, size / 8, size / 8, 1);
@@ -65,5 +72,8 @@ public class ThreeTextures : MonoBehaviour
 
         appendBuffer?.Release();
         appendBuffer = null;
+
+        rt?.Release();
+        rt = null;
     }
 }
